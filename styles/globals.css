@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  img {
+    @apply inline-block;
+  }
+}
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+}
+
+.animation-scroll-down {
+  animation: scroll-down 1.5s infinite;
+}
+
+.p-dropdown.status-dropdown-p0-4 .p-inputtext {
+  padding: .4rem;
+}
+
+/* Table Components */
+
+.p-datatable .p-datatable-tbody > tr > td.td-center {
+  text-align: center;
+}
+.p-datatable th.th-center > .p-column-header-content {
+  justify-content: center;
+}
+
+.p-datatable.p-component {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.fc.fc-theme-standard .fc-view-harness .fc-event.fc-daygrid-block-event {
+  cursor: pointer;
+}
+
+.fc.fc-theme-standard .fc-view-harness .fc-event.fc-daygrid-block-event:hover {
+  background-color: #3a8ab2;
+  border-color: #3a8ab2;
+}
+
+.p-datatable .p-datatable-tbody>tr.row-secondary {
+  --tw-bg-opacity: 1;
+  background-color: rgb(229 231 235 / var(--tw-bg-opacity));  
+}
+
+@keyframes scroll-down {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(250%);
+    opacity: 0.3;
+  }
+}

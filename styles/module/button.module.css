@@ -1,0 +1,11 @@
+.fx-button {
+  @apply rounded-md bg-green-primary px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-green-primary/90 focus:ring-2 focus:ring-green-secondary focus:ring-offset-2 focus-visible:outline-none;
+}
+
+.fx-button:enabled:hover {
+  background-color: rgb(8 65 94 / 0.9);
+}
+
+.fx-button.secondary {
+  @apply bg-white text-green-primary shadow-none hover:bg-gray-100 focus:ring-2 focus:ring-green-secondary focus:ring-offset-2 focus-visible:outline-none;
+}
