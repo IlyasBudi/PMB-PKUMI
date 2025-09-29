@@ -39,13 +39,24 @@ export default function FormRegister() {
     onSubmit: (values) => {
       setLoading(true)
       httpCall("POST", constants.API_PATH.AUTH_REGISTER, values)
-        .then(() => {
-          handleToast("success", "Register Berhasil", "Silahkan periksa email anda untuk melakukan verifikasi", 3000)
+        .then((res) => {
+          const { code, status, message, data, token } = res
 
-          return router.push(constants.CLIENT_PATH.LOGIN)
+          if (code === 200) {
+            handleToast("success", "Register Berhasil", message, 3000)
+
+            // simpan token kalau mau auto-login
+            localStorage.setItem("auth_token", token)
+
+            return router.push(constants.CLIENT_PATH.LOGIN)
+          } else {
+            handleToast("warn", "Register Gagal", message || "Terjadi kesalahan", 5000)
+          }
         })
         .catch((error) => {
-          return handleToast("warn", "Register Gagal", error.message, 5000)
+          // Bisa akses error.response.data.message dari Laravel
+          const msg = error?.response?.data?.message || error.message
+          return handleToast("warn", "Register Gagal", msg, 5000)
         })
         .finally(() => {
           setLoading(false)

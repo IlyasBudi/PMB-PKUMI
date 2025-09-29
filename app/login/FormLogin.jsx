@@ -17,9 +17,13 @@ import ErrorMessage from "@/components/forms/ErrorMessage"
 import { Button } from "@/components/ui/Button"
 import Label from "@/components/forms/Label"
 
+import { useRouter } from "next/navigation"
+import Cookies from "js-cookie"
+
 export default function FormLogin() {
   const { handleToast } = useContext(AppContext)
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   const formik = useFormik({
     initialValues: {
@@ -37,12 +41,22 @@ export default function FormLogin() {
     onSubmit: (values) => {
       setLoading(true)
       httpCall("POST", constants.API_PATH.AUTH_LOGIN, values)
-        .then(() => {
-          handleToast("success", "Login Berhasil", "Anda akan segera diarahkan ke halaman dashboard", 3000)
-          return (window.location.href = constants.CLIENT_PATH.DASHBOARD)
+        .then((res) => {
+          const { code, status, message, data, token } = res
+
+          if (code === 200 && status === "success") {
+            handleToast("success", "Login Berhasil", message, 3000)
+
+            localStorage.setItem("user", JSON.stringify(data.user)) // simpan user info saja
+
+            router.push(constants.CLIENT_PATH.DASHBOARD)
+          } else {
+            handleToast("warn", "Login Gagal", message || "Terjadi kesalahan", 5000)
+          }
         })
         .catch((error) => {
-          return handleToast("warn", "Login Gagal", error.message)
+          const msg = error?.message || "Terjadi kesalahan server"
+          return handleToast("warn", "Login Gagal", msg, 5000)
         })
         .finally(() => {
           setLoading(false)

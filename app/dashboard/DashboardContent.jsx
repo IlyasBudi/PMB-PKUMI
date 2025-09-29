@@ -9,9 +9,7 @@ import { Button, buttonStyles } from "@/components/ui/Button"
 import Link from "next/link"
 import { CLIENT_PATH } from "@/lib/constants"
 
-export function DashboardContent({ latestNotification }) {
-  const { userData } = useContext(UserContext)
-  console.log({ latestNotification })
+export function DashboardContent({ latestNotification, userData }) {
   return (
     <>
       <section>
@@ -34,11 +32,6 @@ export function DashboardContent({ latestNotification }) {
               <h4 className="font-medium">{latestNotification.title}</h4>
             </div>
             <small>{latestNotification.detail}</small>
-            {latestNotification.url && (
-              <Link className={cn(buttonStyles, "mt-4 block")} href={latestNotification.url}>
-                Lihat
-              </Link>
-            )}
           </div>
         )}
       </section>
