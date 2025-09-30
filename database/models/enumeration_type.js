@@ -6,7 +6,7 @@ module.exports = (sequelize, DataTypes) => {
   const Type = withDateNoTz(DataTypes)
   class EnumerationType extends Model {
     static associate(models) {
-      EnumerationType.hasMany(models.Enumeration, { foreignKey: "id" })
+      EnumerationType.hasMany(models.Enumeration, { foreignKey: "typeId" })
     }
   }
   EnumerationType.init(
