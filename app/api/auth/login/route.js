@@ -42,7 +42,7 @@ export async function POST(request) {
           model: Enumeration,
           attributes: ["name"],
           required: true,
-          where: { code: {[Op.or]: [constants.ENUMERATION_USERS_TYPE_ADMIN, constants.ENUMERATION_USERS_TYPE_MAHASISWA]} },
+          where: { code: { [Op.or]: [constants.ENUMERATION_USERS_TYPE_ADMIN, constants.ENUMERATION_USERS_TYPE_MAHASISWA] } },
           include: [
             {
               model: EnumerationType,

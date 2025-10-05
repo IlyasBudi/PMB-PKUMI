@@ -1,37 +1,39 @@
-import { NextResponse } from "next/server";
-import * as constants from "@/lib/constants";
-import { errorHandler } from "@/lib/api";
-import { schemaValidation } from "@/lib/utils";
-import { registerSchema } from "@/validation/auth";
-import { encryptCrypto } from "@/lib/crypto";
-import { Op } from "sequelize";
-import { createWsLog, updateWsLog } from "@/lib/wsLog";
-import nodemailer from "nodemailer";
+import { NextResponse } from "next/server"
+import * as constants from "@/lib/constants"
+import { errorHandler } from "@/lib/api"
+import { schemaValidation } from "@/lib/utils"
+import { registerSchema } from "@/validation/auth"
+import { encryptCrypto } from "@/lib/crypto"
+import { Op } from "sequelize"
+import { createWsLog, updateWsLog } from "@/lib/wsLog"
+import nodemailer from "nodemailer"
 
 // MODELS
-const {
-  Users,
-  Enumeration,
-  EnumerationType,
-  sequelize,
-} = require("@/database/models");
+// console.log("DEBUG: Models loaded?", {
+//   Users: !!Users,
+//   Enumeration: !!Enumeration,
+//   EnumerationType: !!EnumerationType,
+//   sequelize: !!sequelize,
+// })
+const models = require("@/database/models")
+console.log("DEBUG Models loaded:", Object.keys(models))
+const { Users, Enumeration, EnumerationType, sequelize } = require("@/database/models")
 
 export async function POST(request) {
-  const payload = await request.json();
+  const payload = await request.json()
 
-  console.log("1. payload", payload);
+  console.log("1. payload", payload)
 
-  let transaction = null;
-  let wsLog = null;
+  let transaction = null
+  let wsLog = null
   try {
-    wsLog = await createWsLog(constants.ENUMERATION_SERVICE_REGISTER, payload);
-    const { error, value } = schemaValidation(registerSchema, payload);
+    wsLog = await createWsLog(constants.ENUMERATION_SERVICE_REGISTER, payload)
+    const { error, value } = schemaValidation(registerSchema, payload)
     if (error) {
       throw {
         status: constants.RESPONSE_CODE_BAD_REQUEST,
-        message:
-          Object.values(error)[0] || constants.RESPONSE_MESSAGE_BAD_REQUEST,
-      };
+        message: Object.values(error)[0] || constants.RESPONSE_MESSAGE_BAD_REQUEST,
+      }
     }
 
     // CHECK IF USERNAME OR EMAIL IS EXIST
@@ -46,20 +48,20 @@ export async function POST(request) {
       attributes: ["username", "email"],
       raw: true,
     }).then((data) => {
-      if (!data) return;
+      if (!data) return
       if (data?.username === value.username) {
         throw {
           status: constants.RESPONSE_CODE_BAD_REQUEST,
           message: `Username ${value.username} sudah digunakan`,
-        };
+        }
       }
       if (data?.email === value.email) {
         throw {
           status: constants.RESPONSE_CODE_BAD_REQUEST,
           message: `Email ${value.email} sudah digunakan`,
-        };
+        }
       }
-    });
+    })
 
     // FIND USER TYPE
     const typeId = await Enumeration.findOne({
@@ -70,12 +72,11 @@ export async function POST(request) {
       attributes: ["id", "typeId"],
       include: [
         {
-          model: EnumerationType,
-          where: {
-            code: constants.ENUMERATION_TYPE_USERS_TYPE,
-            isActive: true,
-          },
-          attributes: [],
+          ...value,
+          typeId: typeId, // ✅ harus camelCase sesuai model
+          isActive: false, // ✅ camelCase
+          createdDate: new Date(), // ✅ camelCase
+          createdBy: 1, // ✅ camelCase
         },
       ],
     }).then((data) => {
@@ -83,27 +84,22 @@ export async function POST(request) {
         throw {
           status: constants.RESPONSE_CODE_INTERNAL_SERVER_ERROR,
           message: constants.RESPONSE_MESSAGE_INTERNAL_SERVER_ERROR,
-        };
+        }
       }
-      return data.id;
-    });
+      return data.id
+    })
 
     // GENERATE VERIFICATION CODE
-    const length = 6;
-    const token = Math.round(
-      Math.pow(36, length + 1) - Math.random() * Math.pow(36, length)
-    )
+    const length = 6
+    const token = Math.round(Math.pow(36, length + 1) - Math.random() * Math.pow(36, length))
       .toString(36)
       .slice(1)
-      .toUpperCase();
+      .toUpperCase()
 
     // ENCRYPT PASSWORD REQUEST
-    value.password = encryptCrypto(
-      value.password,
-      process.env.CRYPTO_SECRET_KEY
-    );
+    value.password = encryptCrypto(value.password, process.env.CRYPTO_SECRET_KEY)
 
-    transaction = await sequelize.transaction();
+    transaction = await sequelize.transaction()
     await Users.create(
       {
         ...value,
@@ -114,7 +110,7 @@ export async function POST(request) {
         createdBy: 1,
       },
       { transaction }
-    );
+    )
 
     // Send email verification
     let transporter = nodemailer.createTransport({
@@ -129,18 +125,18 @@ export async function POST(request) {
       tls: {
         rejectUnauthorized: false,
       },
-    });
+    })
 
     transporter.verify(function (error, success) {
       if (error) {
-        console.log("SMTP Connection Error:", error);
+        console.log("SMTP Connection Error:", error)
       } else {
-        console.log("SMTP Server is ready to take messages");
+        console.log("SMTP Server is ready to take messages")
       }
-    });
+    })
 
-    const verifLink = `${process.env.BASE_URL}verifikasi-email?email=${value.email}&code=${token}`;
-    console.log("verifLink", verifLink);
+    const verifLink = `${process.env.BASE_URL}verifikasi-email?email=${value.email}&code=${token}`
+    console.log("verifLink", verifLink)
 
     try {
       await transporter.sendMail({
@@ -157,34 +153,28 @@ export async function POST(request) {
             <br>
             <br>
             <p>If you did not sign up with PKUMI, please ignore this email.</p>`,
-      });
+      })
     } catch (err) {
-      console.error("Email send error:", err);
+      console.error("Email send error:", err)
     }
 
     let response = {
       status: constants.RESPONSE_CODE_SUCCESS,
       message: constants.RESPONSE_MESSAGE_SUCCESS,
-    };
+    }
 
-    await updateWsLog(wsLog, constants.WS_LOG_STATUS_DONE, response);
-    await transaction.commit();
+    await updateWsLog(wsLog, constants.WS_LOG_STATUS_DONE, response)
+    await transaction.commit()
 
     return NextResponse.json(response, {
       status: response.status,
-    });
+    })
   } catch (error) {
-    console.error("Register API Error:", error);
-    console.log("Register API Error:", error);
+    console.error("Register API Error:", error)
+    console.log("Register API Error:", error)
     if (wsLog) {
-      await updateWsLog(
-        wsLog,
-        !error.name
-          ? constants.WS_LOG_STATUS_DONE
-          : constants.WS_LOG_STATUS_FAILED,
-        error
-      );
+      await updateWsLog(wsLog, !error.name ? constants.WS_LOG_STATUS_DONE : constants.WS_LOG_STATUS_FAILED, error)
     }
-    return await errorHandler(error, NextResponse, transaction);
+    return await errorHandler(error, NextResponse, transaction)
   }
 }

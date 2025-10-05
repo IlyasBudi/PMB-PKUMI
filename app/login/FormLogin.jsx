@@ -2,6 +2,7 @@
 /* React/Nextjs/Modules */
 import { useContext, useState } from "react"
 import { useFormik } from "formik"
+import { useRouter } from "next/navigation"
 
 /* Utils */
 import { formLoginSchema } from "@/lib/forms/auth"
@@ -18,31 +19,25 @@ import { Button } from "@/components/ui/Button"
 import Label from "@/components/forms/Label"
 
 export default function FormLogin() {
+  const router = useRouter()
   const { handleToast } = useContext(AppContext)
   const [loading, setLoading] = useState(false)
 
   const formik = useFormik({
-    initialValues: {
-      username: "",
-      password: "",
-      is_remember: false,
-    },
+    initialValues: { username: "", password: "", is_remember: false },
     validate: (values) => {
       const validate = schemaValidation(loginSchema, values)
-      if (validate.error) {
-        return validate.error
-      }
-      return {}
+      return validate.error || {}
     },
     onSubmit: (values) => {
       setLoading(true)
       httpCall("POST", constants.API_PATH.AUTH_LOGIN, values)
         .then(() => {
           handleToast("success", "Login Berhasil", "Anda akan segera diarahkan ke halaman dashboard", 3000)
-          return (window.location.href = constants.CLIENT_PATH.DASHBOARD)
+          router.push(constants.CLIENT_PATH.DASHBOARD) // 🚀 Ganti window.location.href
         })
         .catch((error) => {
-          return handleToast("warn", "Login Gagal", error.message)
+          handleToast("warn", "Login Gagal", error.message)
         })
         .finally(() => {
           setLoading(false)
